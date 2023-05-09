@@ -22,6 +22,7 @@ The following table lists the configurable parameters of the Cloudflare-exporter
 | `image.pullPolicy` |  | `"Always"` |
 | `image.tag` |  | `"0.0.2"` |
 | `env` |  | `[]` |
+| `args` | Arguments to the container's entrypoint. | `[]` |
 | `secretRef` | The name of a secret with environment variables | `""` |
 | `imagePullSecrets` |  | `[]` |
 | `nameOverride` |  | `""` |

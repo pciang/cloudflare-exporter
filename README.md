@@ -52,7 +52,11 @@ The exporter can be configured using env variables or command flags.
 | `SCRAPE_DELAY` | scrape delay in seconds, default `300` |
 | `CF_BATCH_SIZE` | cloudflare request zones batch size (1 - 10), default `10` |
 | `METRICS_DENYLIST` | (Optional) cloudflare-exporter metrics to not export, comma delimited list of cloudflare-exporter metrics. If not set, all metrics are exported |
-| `ZONE_<NAME>` |  `DEPRECATED since 0.0.5` (optional) Zone ID. Add zones you want to scrape by adding env vars in this format. You can find the zone ids in Cloudflare dashboards. |
+| `ZONE_<NAME>` |  `DEPRECATED since 0.0.5` (Optional) Zone ID. Add zones you want to scrape by adding env vars in this format. You can find the zone ids in Cloudflare dashboards. |
+| `WITHOUT_WORKER_ANALYTICS` | (Optional) Do not scrape Worker Analytics, `cloudflare_worker_*` won't be available. |
+| `WITHOUT_ZONE_ANALYTICS` | (Optional) Do not scrape Zone Analytics, `cloudflare_zone_requests_*` won't be available. |
+| `WITHOUT_ZONE_COLOCATION_ANALYTICS` | (Optional) Do not scrape Zone Colocation Analytics, `cloudflare_zone_*` (except `cloudflare_zone_requests_*`) won't be available. |
+| `WITHOUT_LOAD_BALANCER_ANALYTICS` | (Optional) Do not scrape Load Balancer Analytics, `cloudflare_zone_pool_*` won't be available. |
 
 Corresponding flags:
 ```
@@ -67,6 +71,10 @@ Corresponding flags:
   -scrape_delay=300: scrape delay in seconds, defaults to 300
   -cf_batch_size=10: cloudflare zones batch size (1-10)
   -metrics_denylist="": cloudflare-exporter metrics to not export, comma delimited list
+  -without_worker_analytics: A boolean flag, turned-off by default
+  -without_zone_analytics: A boolean flag, turned-off by default
+  -without_zone_colocation_analytics: A boolean flag, turned-off by default
+  -without_load_balancer_analytics: A boolean flag, turned-off by default
 ```
 
 Note: `ZONE_<name>` configuration is not supported as flag.

@@ -15,18 +15,22 @@ import (
 )
 
 var (
-	cfgListen          = ":8080"
-	cfgCfAPIKey        = ""
-	cfgCfAPIEmail      = ""
-	cfgCfAPIToken      = ""
-	cfgMetricsPath     = "/metrics"
-	cfgZones           = ""
-	cfgExcludeZones    = ""
-	cfgScrapeDelay     = 300
-	cfgFreeTier        = false
-	cfgBatchSize       = 10
-	cfgMetricsDenylist = ""
-	cfgLogLevel        = "info"
+	cfgListen                         = ":8080"
+	cfgCfAPIKey                       = ""
+	cfgCfAPIEmail                     = ""
+	cfgCfAPIToken                     = ""
+	cfgMetricsPath                    = "/metrics"
+	cfgZones                          = ""
+	cfgExcludeZones                   = ""
+	cfgScrapeDelay                    = 300
+	cfgFreeTier                       = false
+	cfgBatchSize                      = 10
+	cfgMetricsDenylist                = ""
+	cfgLogLevel                       = "info"
+	cfgWithoutWorkerAnalytics         = false
+	cfgWithoutZoneAnalytics           = false
+	cfgWithoutZoneColocationAnalytics = false
+	cfgWithoutLoadBalancerAnalytics   = false
 )
 
 type AccountJob struct {
@@ -187,6 +191,10 @@ func main() {
 	flag.BoolVar(&cfgFreeTier, "free_tier", cfgFreeTier, "scrape only metrics included in free plan")
 	flag.StringVar(&cfgMetricsDenylist, "metrics_denylist", cfgMetricsDenylist, "metrics to not expose, comma delimited list")
 	flag.StringVar(&cfgLogLevel, "log_level", cfgLogLevel, "log level, default to warning")
+	flag.BoolVar(&cfgWithoutWorkerAnalytics, "without_worker_analytics", cfgWithoutWorkerAnalytics, "exclude worker analytics")
+	flag.BoolVar(&cfgWithoutZoneAnalytics, "without_zone_analytics", cfgWithoutZoneAnalytics, "exclude zone analytics")
+	flag.BoolVar(&cfgWithoutZoneColocationAnalytics, "without_zone_colocation_analytics", cfgWithoutZoneColocationAnalytics, "exclude zone colocation analytics")
+	flag.BoolVar(&cfgWithoutLoadBalancerAnalytics, "without_load_balancer_analytics", cfgWithoutLoadBalancerAnalytics, "exclude load balancer analytics")
 	flag.Parse()
 	if !(len(cfgCfAPIToken) > 0 || (len(cfgCfAPIEmail) > 0 && len(cfgCfAPIKey) > 0)) {
 		log.Fatal("Please provide CF_API_KEY+CF_API_EMAIL or CF_API_TOKEN")
@@ -215,10 +223,22 @@ func main() {
 	cfAccounts = fetchAccounts()
 	cfFilteredZones = filterExcludedZones(filterZones(fetchZones(), getTargetZones()), getExcludedZones())
 	go func() {
-		fetchWorkerAnalyticsJobs := prepareAccountJobs()
-		fetchZoneAnalyticsJobs := prepareExporterBatchJobs()
-		fetchZoneColocationAnalyticsJobs := prepareExporterBatchJobs()
-		fetchLoadBalancerAnalyticsJobs := prepareExporterBatchJobs()
+		fetchWorkerAnalyticsJobs := []AccountJob{}
+		if !cfgWithoutWorkerAnalytics {
+			fetchWorkerAnalyticsJobs = prepareAccountJobs()
+		}
+		fetchZoneAnalyticsJobs := []BatchedZonesJob{}
+		if !cfgWithoutZoneAnalytics {
+			fetchZoneAnalyticsJobs = prepareExporterBatchJobs()
+		}
+		fetchZoneColocationAnalyticsJobs := []BatchedZonesJob{}
+		if !cfgWithoutZoneColocationAnalytics {
+			fetchZoneColocationAnalyticsJobs = prepareExporterBatchJobs()
+		}
+		fetchLoadBalancerAnalyticsJobs := []BatchedZonesJob{}
+		if !cfgWithoutLoadBalancerAnalytics {
+			fetchLoadBalancerAnalyticsJobs = prepareExporterBatchJobs()
+		}
 
 		for ; true; <-time.NewTicker(time.Minute).C {
 			go fetchMetrics(fetchWorkerAnalyticsJobs, fetchZoneAnalyticsJobs, fetchZoneColocationAnalyticsJobs, fetchLoadBalancerAnalyticsJobs)
